@@ -687,7 +687,7 @@ function_Block= function(option_list)
   
 }
 
-put_together_CIS_and_Block= function(option_list)
+put_together_CIS_and_Block_and_z_score= function(option_list)
 {
   opt_in = option_list
   opt <<- option_list
@@ -810,7 +810,7 @@ put_together_CIS_and_Block= function(option_list)
   
   DTU_CIS_subset<-unique(DTU_CIS[,indx.int])
   
-  colnames(DTU_CIS_subset)[which(colnames(DTU_CIS_subset) == "ajusted.minuslogpvalue_Genotypes")]<-"CIS_gene_minuslogpvalue"
+  colnames(DTU_CIS_subset)[which(colnames(DTU_CIS_subset) == "ajusted.minuslogpvalue_Genotypes")]<-"CIS_minuslogpvalue"
   colnames(DTU_CIS_subset)[which(colnames(DTU_CIS_subset) == "coefficient_Genotypes")]<-"CIS_Beta"
   colnames(DTU_CIS_subset)[which(colnames(DTU_CIS_subset) == "n_breakdown_string")]<-"CIS_n_breakdown_string"
   
@@ -915,7 +915,7 @@ put_together_CIS_and_Block= function(option_list)
   
   DTU_Block_and_PCHiC_subset<-unique(DTU_Block_and_PCHiC[,indx.int])
   
-  colnames(DTU_Block_and_PCHiC_subset)[which(colnames(DTU_Block_and_PCHiC_subset) == "ajusted.minuslogpvalue_Genotypes")]<-"Block_PCHiC_gene_minuslogpvalue"
+  colnames(DTU_Block_and_PCHiC_subset)[which(colnames(DTU_Block_and_PCHiC_subset) == "ajusted.minuslogpvalue_Genotypes")]<-"Block_PCHiC_minuslogpvalue"
   colnames(DTU_Block_and_PCHiC_subset)[which(colnames(DTU_Block_and_PCHiC_subset) == "coefficient_Genotypes")]<-"Block_PCHiC_Beta"
   colnames(DTU_Block_and_PCHiC_subset)[which(colnames(DTU_Block_and_PCHiC_subset) == "n_breakdown_string")]<-"Block_PCHiC_n_breakdown_string"
   
@@ -931,7 +931,58 @@ put_together_CIS_and_Block= function(option_list)
     cat(str(Results_DEF))
     cat("\n")
   }
+  ## Z score normalization Explore per CT effect size values
   
+  explore.dt<-data.table(Results_DEF, key="Cell_Type")
+  
+  exploration_df<-as.data.frame(explore.dt[,.(MIN_CIS=min(CIS_Beta[!is.na(CIS_Beta)]),
+                                              Q1_CIS=summary(CIS_Beta[!is.na(CIS_Beta)])[2],
+                                              MEDIAN_CIS=summary(CIS_Beta[!is.na(CIS_Beta)])[3],
+                                              Q3_CIS=summary(CIS_Beta[!is.na(CIS_Beta)])[5],
+                                              MAX_CIS=summary(CIS_Beta[!is.na(CIS_Beta)])[6],
+                                              mean_CIS=mean(CIS_Beta[!is.na(CIS_Beta)]),
+                                              sd_CIS=sd(CIS_Beta[!is.na(CIS_Beta)]),
+                                              MIN_Block_PCHiC=min(Block_PCHiC_Beta[!is.na(Block_PCHiC_Beta)]),
+                                              Q1_Block_PCHiC=summary(Block_PCHiC_Beta[!is.na(Block_PCHiC_Beta)])[2],
+                                              MEDIAN_Block_PCHiC=summary(Block_PCHiC_Beta[!is.na(Block_PCHiC_Beta)])[3],
+                                              Q3_Block_PCHiC=summary(Block_PCHiC_Beta[!is.na(Block_PCHiC_Beta)])[5],
+                                              MAX_Block_PCHiC=summary(Block_PCHiC_Beta[!is.na(Block_PCHiC_Beta)])[6],
+                                              mean_Block_PCHiC=mean(Block_PCHiC_Beta[!is.na(Block_PCHiC_Beta)]),
+                                              sd_Block_PCHiC=sd(Block_PCHiC_Beta[!is.na(Block_PCHiC_Beta)])
+  ),
+  by=key(explore.dt)], stringsAsFactors=F)
+  
+  
+  
+  cat("exploration_df_PRE_Z_score\n")
+  cat(str(exploration_df))
+  cat("\n")
+  
+  exploration_subset_df<-exploration_df[,c(which(colnames(exploration_df) == "Cell_Type"),
+                                           which(colnames(exploration_df) == "mean_CIS"),
+                                           which(colnames(exploration_df) == "sd_CIS"),
+                                           which(colnames(exploration_df) == "mean_Block_PCHiC"),
+                                           which(colnames(exploration_df) == "sd_Block_PCHiC"))]
+  
+  cat("exploration_subset_df_PRE_Z_score\n")
+  cat(str(exploration_subset_df))
+  cat("\n")
+  
+  Results_DEF<-merge(Results_DEF,
+                     exploration_subset_df,
+                     by="Cell_Type",
+                     all=T)
+  
+  
+  
+  cat("Results_DEF_PRE_Z_score_1\n")
+  cat(str(Results_DEF))
+  cat("\n")
+  cat(str(unique(Results_DEF$VAR)))
+  cat("\n")
+  
+  Results_DEF$CIS_Beta_Z_score<-((Results_DEF$CIS_Beta-Results_DEF$mean_CIS)/Results_DEF$sd_CIS)
+  Results_DEF$Block_PCHiC_Beta_Z_score<-((Results_DEF$Block_PCHiC_Beta-Results_DEF$mean_Block_PCHiC)/Results_DEF$sd_Block_PCHiC)
   setwd(out)
   
   write.table(file="DTU_LogRatio_FPKM_results.tsv", Results_DEF, sep="\t", row.names = F,quote = F)
@@ -994,7 +1045,7 @@ main = function() {
   collate_results_function(opt)
   function_CIS(opt)
   function_Block(opt)
-  put_together_CIS_and_Block(opt)
+  put_together_CIS_and_Block_and_z_score(opt)
   
 }
 
