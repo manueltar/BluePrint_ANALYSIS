@@ -565,7 +565,7 @@ LogRatio_LM_model = function (option_list)
         
         for(i in 1:length(ENSG_array))
         {
-          Condition_DEBUG <- 0
+          Condition_DEBUG <- 1
           
           ENSG_array_sel<-ENSG_array[i]
           
@@ -928,6 +928,16 @@ LogRatio_LM_model = function (option_list)
                 }
               }
               
+              if(ENSG_array_sel == "ENSG00000171791")
+              {
+                if(dim(Ratio_df[which(Ratio_df$transcript_id == "ENST00000398117"),])[1] >0)
+                {
+                  Reference_transcript<-"ENST00000398117"
+                }
+              }
+             
+              
+              
               if(Condition_DEBUG == 1)
               {
                 cat("Reference_transcript_AFTER\n")
@@ -936,6 +946,14 @@ LogRatio_LM_model = function (option_list)
                 
                 
               }
+              
+              # if(ENSG_array_sel == 'ENSG00000171791')
+              # {
+              #   quit(status = 1)
+              #   
+              # }
+              
+              
               
               Ratio_df_reference<-droplevels(Ratio_df[which(Ratio_df$transcript_id == Reference_transcript),c(which(colnames(Ratio_df) == "BP_ID"),
                                                                                                               which(colnames(Ratio_df) == "transcript_id"),
